@@ -1,17 +1,15 @@
-import { PageCollection } from './Collection/PageCollection';
-import { HTMLPageCollection } from './Collection/HTMLPageCollection';
 import { PageRect, Point } from './BasicTypes';
+import { HTMLPageCollection } from './Collection/HTMLPageCollection';
+import { PageCollection } from './Collection/PageCollection';
+import { EventObject } from './Event/EventObject';
 import { Flip, FlipCorner, FlippingState } from './Flip/Flip';
-import { Orientation, Render } from './Render/Render';
-import { HTMLUI } from './UI/HTMLUI';
 import { Helper } from './Helper';
 import { Page } from './Page/Page';
-import { EventObject } from './Event/EventObject';
 import { HTMLRender } from './Render/HTMLRender';
+import { Orientation, Render } from './Render/Render';
 import { FlipSetting, Settings } from './Settings';
+import { HTMLUI } from './UI/HTMLUI';
 import { UI } from './UI/UI';
-
-import './Style/stPageFlip.css';
 
 /**
  * Class representing a main PageFlip object

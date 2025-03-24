@@ -1,8 +1,8 @@
-import { PageFlip } from '../PageFlip';
 import { Point } from '../BasicTypes';
-import { FlipSetting, SizeType } from '../Settings';
 import { FlipCorner, FlippingState } from '../Flip/Flip';
+import { PageFlip } from '../PageFlip';
 import { Orientation } from '../Render/Render';
+import { FlipSetting, SizeType } from '../Settings';
 
 type SwipeData = {
     point: Point;
@@ -159,10 +159,16 @@ export abstract class UI {
      */
     private getMousePos(x: number, y: number): Point {
         const rect = this.distElement.getBoundingClientRect();
-
+        
+        // Calculate scale factor by comparing the element's offsetWidth with its bounding client width
+        // This accounts for any CSS scaling applied to parent elements
+        const scaleX = this.distElement.offsetWidth / rect.width;
+        const scaleY = this.distElement.offsetHeight / rect.height;
+        
+        // Apply the inverse of the scale factor to correctly map touch coordinates
         return {
-            x: x - rect.left,
-            y: y - rect.top,
+            x: (x - rect.left) * scaleX,
+            y: (y - rect.top) * scaleY,
         };
     }
 

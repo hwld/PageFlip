@@ -1,8 +1,8 @@
 import { HTMLPage } from '../Page/HTMLPage';
+import { PageDensity } from '../Page/Page';
+import { PageFlip } from '../PageFlip';
 import { Render } from '../Render/Render';
 import { PageCollection } from './PageCollection';
-import { PageFlip } from '../PageFlip';
-import { PageDensity } from '../Page/Page';
 
 /**
  * Сlass representing a collection of pages as HTML Element
@@ -24,7 +24,12 @@ export class HTMLPageCollection extends PageCollection {
     }
 
     public load(): void {
-        for (const pageElement of this.pagesElement) {
+        // Convert to array to make TypeScript happy
+        const pageElements = Array.isArray(this.pagesElement) 
+            ? this.pagesElement
+            : Array.from(this.pagesElement);
+            
+        for (const pageElement of pageElements) {
             const page = new HTMLPage(
                 this.render,
                 pageElement,

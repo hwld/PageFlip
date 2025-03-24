@@ -1,6 +1,6 @@
-import { UI } from './UI';
 import { PageFlip } from '../PageFlip';
 import { FlipSetting } from '../Settings';
+import { UI } from './UI';
 
 /**
  * UI for HTML mode
@@ -22,7 +22,10 @@ export class HTMLUI extends UI {
         this.distElement = inBlock.querySelector('.stf__block');
 
         this.items = items;
-        for (const item of items) {
+        
+        // Convert to array to make TypeScript happy
+        const itemsArray = Array.isArray(items) ? items : Array.from(items);
+        for (const item of itemsArray) {
             this.distElement.appendChild(item);
         }
 
@@ -30,7 +33,9 @@ export class HTMLUI extends UI {
     }
 
     public clear(): void {
-        for (const item of this.items) {
+        // Convert to array to make TypeScript happy
+        const itemsArray = Array.isArray(this.items) ? this.items : Array.from(this.items);
+        for (const item of itemsArray) {
             this.parentElement.appendChild(item);
         }
     }
@@ -45,7 +50,9 @@ export class HTMLUI extends UI {
 
         this.distElement.innerHTML = '';
 
-        for (const item of items) {
+        // Convert to array to make TypeScript happy
+        const itemsArray = Array.isArray(items) ? items : Array.from(items);
+        for (const item of itemsArray) {
             this.distElement.appendChild(item);
         }
         this.items = items;
