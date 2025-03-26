@@ -251,6 +251,16 @@ export class PageFlip extends EventObject {
                 targetPageIndexes
             };
             
+            // Set data-flipstate attribute on parent element
+            const parentElement = this.block.querySelector('.stf__parent') || this.block;
+            if (newState === FlippingState.FLIPPING) {
+                parentElement.setAttribute('data-flipstate', 'flipping');
+            } else if (newState === FlippingState.USER_FOLD || newState === FlippingState.FOLD_CORNER) {
+                parentElement.setAttribute('data-flipstate', 'folding');
+            } else {
+                parentElement.removeAttribute('data-flipstate');
+            }
+            
             // Trigger the enhanced changeState event
             this.trigger('changeState', this, eventData);
             
