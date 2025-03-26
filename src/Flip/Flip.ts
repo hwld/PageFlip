@@ -1,10 +1,9 @@
-import { HTMLPage } from '../Page/HTMLPage';
-import { Orientation, Render } from '../Render/Render';
-import { PageFlip } from '../PageFlip';
-import { Helper } from '../Helper';
 import { PageRect, Point } from '../BasicTypes';
-import { FlipCalculation } from './FlipCalculation';
+import { Helper } from '../Helper';
 import { Page, PageDensity } from '../Page/Page';
+import { PageFlip } from '../PageFlip';
+import { Orientation, Render } from '../Render/Render';
+import { FlipCalculation } from './FlipCalculation';
 
 /**
  * Flipping direction
@@ -380,6 +379,14 @@ export class Flip {
      */
     public getState(): FlippingState {
         return this.state;
+    }
+
+    /**
+     * Get the current calculation object
+     * @returns The current FlipCalculation object or null
+     */
+    public getCalculation(): FlipCalculation | null {
+        return this.calc;
     }
 
     private setState(newState: FlippingState): void {

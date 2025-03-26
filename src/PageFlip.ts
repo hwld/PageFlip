@@ -29,6 +29,9 @@ export class PageFlip extends EventObject {
     private render: Render;
 
     private ui: UI;
+    
+    // For tracking state changes
+    private previousState: FlippingState = FlippingState.READ;
 
     /**
      * Create a new PageFlip instance
@@ -86,7 +89,35 @@ export class PageFlip extends EventObject {
                 page: this.setting.startPage,
                 mode: this.render.getOrientation(),
             });
+            
+            // Emit initial changeState event with READ state and current spread info
+            this.emitInitialState();
         }, 1);
+    }
+    
+    /**
+     * Emit the initial changeState event with the current spread information
+     * This will notify listeners about the initial state and visible pages
+     */
+    private emitInitialState(): void {
+        const currentSpreadIndex = this.pages.getCurrentSpreadIndex();
+        const currentPageIndex = this.pages.getCurrentPageIndex();
+        
+        // Get the affected pages in the current spread
+        const currentPageIndexes = this.getPageIndexesForSpread(currentSpreadIndex);
+        
+        // Create the initial state event data
+        const eventData = {
+            state: FlippingState.READ,
+            currentPageIndex,
+            currentSpreadIndex,
+            currentPageIndexes,
+            targetSpreadIndex: currentSpreadIndex,
+            targetPageIndexes: currentPageIndexes
+        };
+        
+        // Trigger the enhanced changeState event with initial state
+        this.trigger('changeState', this, eventData);
     }
 
     /**
@@ -108,6 +139,9 @@ export class PageFlip extends EventObject {
             page: current,
             mode: this.render.getOrientation(),
         });
+        
+        // Emit changeState event after update as well
+        this.emitInitialState();
     }
 
     /**
@@ -172,10 +206,104 @@ export class PageFlip extends EventObject {
     /**
      * Call a state change event trigger
      *
-     * @param {FlippingState} newState - New  state of the object
+     * @param {FlippingState} newState - New state of the object
      */
     public updateState(newState: FlippingState): void {
-        this.trigger('changeState', this, newState);
+        // Only send event if the state actually changed
+        if (this.previousState !== newState) {
+            const currentSpreadIndex = this.pages.getCurrentSpreadIndex();
+            const currentPageIndex = this.pages.getCurrentPageIndex();
+            
+            // Get the affected pages in the current spread
+            const affectedPageIndexes = this.getPageIndexesForSpread(currentSpreadIndex);
+            
+            // Get the target spread based on the state and direction
+            let targetSpreadIndex = currentSpreadIndex;
+            let targetPageIndexes = affectedPageIndexes;
+            
+            // If we're starting to flip or folding a corner, determine the target spread
+            if ((newState === FlippingState.FLIPPING || 
+                 newState === FlippingState.USER_FOLD || 
+                 newState === FlippingState.FOLD_CORNER) && 
+                (this.previousState === FlippingState.READ || this.previousState === FlippingState.FOLD_CORNER)) {
+                
+                // Get flip direction from the flip controller
+                const direction = this.flipController.getCalculation()?.getDirection();
+                
+                // Calculate target spread index based on direction
+                if (direction === 0) { // FORWARD
+                    targetSpreadIndex = currentSpreadIndex + 1;
+                } else if (direction === 1) { // BACK
+                    targetSpreadIndex = currentSpreadIndex - 1;
+                }
+                
+                // Get page indexes for the target spread
+                targetPageIndexes = this.getPageIndexesForSpread(targetSpreadIndex);
+            }
+            
+            // Create the enhanced event data
+            const eventData = {
+                state: newState,
+                currentPageIndex,
+                currentSpreadIndex,
+                currentPageIndexes: affectedPageIndexes,
+                targetSpreadIndex,
+                targetPageIndexes
+            };
+            
+            // Trigger the enhanced changeState event
+            this.trigger('changeState', this, eventData);
+            
+            // Update the previous state
+            this.previousState = newState;
+        }
+    }
+    
+    /**
+     * Get page indexes for a specific spread
+     * 
+     * @param spreadIndex The spread index
+     * @returns Array of page indexes in the spread
+     */
+    private getPageIndexesForSpread(spreadIndex: number): number[] {
+        if (spreadIndex < 0) {
+            return [];
+        }
+        
+        try {
+            const orientation = this.render.getOrientation();
+            const pageCount = this.getPageCount();
+            
+            if (orientation === Orientation.LANDSCAPE) {
+                if (this.setting.showCover) {
+                    // First spread is cover only
+                    if (spreadIndex === 0) {
+                        return [0];
+                    } else {
+                        // Calculate page indexes based on spread index with cover
+                        const startPage = (spreadIndex - 1) * 2 + 1;
+                        if (startPage + 1 < pageCount) {
+                            return [startPage, startPage + 1];
+                        } else {
+                            return [startPage];
+                        }
+                    }
+                } else {
+                    // Calculate page indexes based on spread index with no cover
+                    const startPage = spreadIndex * 2;
+                    if (startPage + 1 < pageCount) {
+                        return [startPage, startPage + 1];
+                    } else {
+                        return [startPage];
+                    }
+                }
+            } else {
+                // In portrait mode, one spread = one page
+                return [spreadIndex];
+            }
+        } catch (e) {
+            return [];
+        }
     }
 
     /**
