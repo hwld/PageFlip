@@ -8,10 +8,10 @@
     touch-action: pan-y;
 }
 
-.sft__wrapper {
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
+.stf__parent[data-flipstate="folding"] .stf__item *,
+.stf__parent[data-flipstate="flipping"] .stf__item * {
+    pointer-events: none !important;
+    user-select: none !important;
 }
 
 .stf__parent canvas {
@@ -20,6 +20,18 @@
     height: 100%;
     left: 0;
     top: 0;
+}
+
+.sft__wrapper {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.stf__parent[data-flipstate="folding"] .stf__item *,
+.stf__parent[data-flipstate="flipping"] .stf__item * {
+  pointer-events: none !important;
+  user-select: none !important;
 }
 
 .stf__block {
