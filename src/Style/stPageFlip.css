@@ -1,37 +1,8 @@
-.stf__parent {
-    position: relative;
-    display: block;
-    box-sizing: border-box;
-    transform: translateZ(0);
-
-    -ms-touch-action: pan-y;
-    touch-action: pan-y;
-}
-
-.stf__parent[data-flipstate="folding"] .stf__item *,
-.stf__parent[data-flipstate="flipping"] .stf__item * {
-    pointer-events: none !important;
-    user-select: none !important;
-}
-
-.stf__parent canvas {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    left: 0;
-    top: 0;
-}
-
+/* Basic magazine container styles */
 .sft__wrapper {
     position: relative;
     width: 100%;
     box-sizing: border-box;
-}
-
-.stf__parent[data-flipstate="folding"] .stf__item *,
-.stf__parent[data-flipstate="flipping"] .stf__item * {
-  pointer-events: none !important;
-  user-select: none !important;
 }
 
 .stf__block {
@@ -46,6 +17,13 @@
     display: none;
     position: absolute;
     transform-style: preserve-3d;
+    overflow: hidden;
+}
+
+.stf__item > .content-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
 }
 
 .stf__outerShadow {
@@ -68,6 +46,50 @@
 
 .stf__hardInnerShadow {
     position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* PageFlip parent container */
+.stf__parent {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    transform: translateZ(0);
+    -ms-touch-action: pan-y;
+    touch-action: pan-y;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* State-specific styles for parent */
+.stf__parent[data-flipstate="folding"] .stf__item *,
+.stf__parent[data-flipstate="flipping"] .stf__item * {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+/* Interactive mode disabled styles */
+.stf__parent.disable-element-interactions .stf__item * {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+.stf__parent.disable-element-interactions .stf__item {
+    pointer-events: all !important;
+    cursor: default !important;
+}
+
+.stf__parent.disable-element-interactions .stf__block {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Canvas elements */
+.stf__parent canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
     left: 0;
     top: 0;
 }

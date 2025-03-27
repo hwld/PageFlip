@@ -57,6 +57,15 @@ export interface FlipSetting {
 
     /** if this value is true, flipping by clicking on the whole book will be locked. Only on corners */
     disableFlipByClick: boolean;
+    
+    /** if this value is true, an animation showing the corner lifting will be displayed periodically */
+    showFlipHint: boolean;
+    
+    /** The interval in milliseconds between flip hint animations */
+    flipHintInterval: number;
+    
+    /** The cooldown period in milliseconds after user interaction before hints can resume */
+    flipHintCooldown: number;
 }
 
 export class Settings {
@@ -82,6 +91,9 @@ export class Settings {
         useMouseEvents: true,
         showPageCorners: true,
         disableFlipByClick: false,
+        showFlipHint: false,
+        flipHintInterval: 5000,
+        flipHintCooldown: 60000,
     };
 
     /**
@@ -91,8 +103,14 @@ export class Settings {
      * @returns {FlipSetting} Сonfiguration object
      */
     public getSettings(userSetting: Record<string, number | string | boolean>): FlipSetting {
+        console.log("Magazine Settings: Getting settings with user input:", userSetting);
         const result = this._default;
         Object.assign(result, userSetting);
+
+        console.log("Magazine Settings: Final settings after merging:", {
+            showFlipHint: result.showFlipHint,
+            flipHintInterval: result.flipHintInterval
+        });
 
         if (result.size !== SizeType.STRETCH && result.size !== SizeType.FIXED)
             throw new Error('Invalid size type. Available only "fixed" and "stretch" value');
