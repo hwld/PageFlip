@@ -20,6 +20,7 @@ export class PageFlip extends EventObject {
     private mousePosition: Point;
     private isUserTouch = false;
     private isUserMove = false;
+    private interactiveMode = true; // Add a flag to track interactive mode
 
     private readonly setting: FlipSetting = null;
     private readonly block: HTMLElement; // Root HTML Element
@@ -437,11 +438,43 @@ export class PageFlip extends EventObject {
     }
 
     /**
+     * Enable or disable interactivity for the book
+     * 
+     * @param {boolean} interactive - If false, all interactions will be disabled (flipping, corner lifting, etc.)
+     */
+    public setInteractive(interactive: boolean): void {
+        this.interactiveMode = interactive;
+        
+        const parentElement = this.block.querySelector('.stf__parent') || this.block;
+        
+        // Add/remove class for CSS-based interaction disabling
+        if (!interactive) {
+            parentElement.classList.add('disable-element-interactions');
+        } else {
+            parentElement.classList.remove('disable-element-interactions');
+        }
+        
+        // Disable/enable page flipping functionality
+        this.setting.disableFlipByClick = !interactive;
+        
+        // Disable/enable corner lifting on hover
+        this.setting.showPageCorners = interactive;
+        
+        // Update the UI to reflect these changes
+        if (this.ui) {
+            this.ui.update();
+        }
+    }
+
+    /**
      * Start page turning. Called when a user clicks or touches
      *
      * @param {Point} pos - Touch position in coordinates relative to the book
      */
     public startUserTouch(pos: Point): void {
+        // If interactivity is disabled, don't process any touch start events
+        if (!this.interactiveMode) return;
+
         this.mousePosition = pos; // Save touch position
         this.isUserTouch = true;
         this.isUserMove = false;
@@ -454,6 +487,9 @@ export class PageFlip extends EventObject {
      * @param {boolean} isTouch - True if there was a touch event, not a mouse click
      */
     public userMove(pos: Point, isTouch: boolean): void {
+        // If interactivity is disabled, don't process any movements
+        if (!this.interactiveMode) return;
+
         if (!this.isUserTouch && !isTouch && this.setting.showPageCorners) {
             this.flipController.showCorner(pos); // fold Page Corner
         } else if (this.isUserTouch) {
@@ -471,6 +507,9 @@ export class PageFlip extends EventObject {
      * @param {boolean} isSwipe - true if there was a mobile swipe event
      */
     public userStop(pos: Point, isSwipe = false): void {
+        // If interactivity is disabled, don't process any touch end events
+        if (!this.interactiveMode) return;
+
         if (this.isUserTouch) {
             this.isUserTouch = false;
 
