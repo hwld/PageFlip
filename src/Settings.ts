@@ -103,14 +103,8 @@ export class Settings {
      * @returns {FlipSetting} Сonfiguration object
      */
     public getSettings(userSetting: Record<string, number | string | boolean>): FlipSetting {
-        console.log("Magazine Settings: Getting settings with user input:", userSetting);
         const result = this._default;
         Object.assign(result, userSetting);
-
-        console.log("Magazine Settings: Final settings after merging:", {
-            showFlipHint: result.showFlipHint,
-            flipHintInterval: result.flipHintInterval
-        });
 
         if (result.size !== SizeType.STRETCH && result.size !== SizeType.FIXED)
             throw new Error('Invalid size type. Available only "fixed" and "stretch" value');

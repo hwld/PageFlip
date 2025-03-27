@@ -81,8 +81,6 @@ export class PageFlip extends EventObject {
      * Cancel any running hint animation
      */
     private cancelHintAnimation(): void {
-        console.log("Magazine: Canceling hint animation");
-        
         // Cancel the animation frame if it exists
         if (this.animationFrameId !== null) {
             cancelAnimationFrame(this.animationFrameId);
@@ -97,41 +95,24 @@ export class PageFlip extends EventObject {
      * Setup or restart the page flip hint timer
      */
     private setupFlipHintTimer(): void {
-        console.log("Magazine: setupFlipHintTimer called", {
-            showFlipHint: this.setting.showFlipHint,
-            orientation: this.render?.getOrientation(),
-            state: this.getState(),
-            inCooldown: Date.now() < this.cooldownUntil,
-            existingTimer: this.flipHintTimer !== null
-        });
-
-        // Only clear existing timer if we're going to set a new one immediately
-        // This avoids unnecessary cancellations
-        
         // Only proceed if hints are enabled and we're in landscape mode
         if (!this.setting.showFlipHint) {
-            console.log("Magazine: Flip hint disabled in settings");
             return;
         }
         
         if (this.render.getOrientation() !== Orientation.LANDSCAPE) {
-            console.log("Magazine: Not in landscape mode, skipping hint");
             return;
         }
         
         // Only show hints when in read state
         if (this.getState() !== FlippingState.READ) {
-            console.log("Magazine: Not in READ state, skipping hint");
-            
             // Important: Set up a check to try again when we return to READ state
             // This ensures hints restart after page turns or user interactions
             setTimeout(() => {
                 if (this.getState() === FlippingState.READ) {
-                    console.log("Magazine: State returned to READ, setting up hint timer again");
                     this.setupFlipHintTimer();
                 } else {
                     // If still not in READ state, try again later
-                    console.log("Magazine: State still not READ, will check again");
                     this.setupFlipHintTimer();
                 }
             }, 1000); // Check again in 1 second
@@ -143,13 +124,11 @@ export class PageFlip extends EventObject {
         const now = Date.now();
         if (now < this.cooldownUntil) {
             const remainingCooldown = this.cooldownUntil - now;
-            console.log(`Magazine: In cooldown period, ${remainingCooldown}ms remaining`);
             
             // Only set a new timer if there isn't one already
             if (this.flipHintTimer === null) {
                 // Schedule timer to restart after cooldown ends
                 this.flipHintTimer = window.setTimeout(() => {
-                    console.log("Magazine: Cooldown period ended, restarting hint timer");
                     this.setupFlipHintTimer();
                 }, remainingCooldown);
             }
@@ -162,17 +141,13 @@ export class PageFlip extends EventObject {
         
         // Get the hint interval (default to 5 seconds if not set)
         const interval = this.setting.flipHintInterval || 5000;
-        console.log(`Magazine: Setting up hint timer with interval ${interval}ms`);
         
         // Set up the timer
         this.flipHintTimer = window.setTimeout(() => {
-            console.log("Magazine: Hint timer fired");
             // Only show hint if enough time has passed since last interaction
             const timeSinceLastInteraction = Date.now() - this.lastInteractionTime;
-            console.log(`Magazine: Time since last interaction: ${timeSinceLastInteraction}ms`);
             
             if (timeSinceLastInteraction < interval) {
-                console.log("Magazine: Recent interaction detected, rescheduling hint");
                 // Not enough idle time has passed, reschedule
                 this.setupFlipHintTimer();
                 return;
@@ -186,7 +161,6 @@ export class PageFlip extends EventObject {
             
             // Always reschedule the next hint, even if we didn't show one this time
             // This ensures the timer continues working
-            console.log("Magazine: Scheduling next hint");
             this.setupFlipHintTimer();
         }, interval);
     }
@@ -195,28 +169,20 @@ export class PageFlip extends EventObject {
      * Display the page flip hint animation
      */
     private showFlipHint(): void {
-        console.log("Magazine: showFlipHint called", {
-            state: this.getState(),
-            orientation: this.render?.getOrientation()
-        });
-
         // Only cancel existing animation if one is actually running
         // This avoids creating an unnecessary cancellation point
         if (this.animationFrameId !== null) {
-            console.log("Magazine: Canceling existing hint animation before starting new one");
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
 
         // Only proceed if we're in the READ state
         if (this.getState() !== FlippingState.READ) {
-            console.log("Magazine: Not in READ state, skipping hint animation");
             return;
         }
         
         // Only show the hint if we're in landscape mode with multiple pages
         if (this.render.getOrientation() !== Orientation.LANDSCAPE) {
-            console.log("Magazine: Not in landscape mode, skipping hint animation");
             return;
         }
         
@@ -224,15 +190,8 @@ export class PageFlip extends EventObject {
         const currentSpreadIndex = this.pages.getCurrentSpreadIndex();
         const pageIndexes = this.getPageIndexesForSpread(currentSpreadIndex);
         
-        console.log("Magazine: Spread info", {
-            currentSpreadIndex,
-            pageIndexes,
-            pageCount: this.getPageCount()
-        });
-        
         // In landscape mode with multiple pages per spread, we want the rightmost page
         if (pageIndexes.length <= 1) {
-            console.log("Magazine: Single page spread, skipping hint animation");
             return; // No hint for single-page spreads
         }
         
@@ -241,21 +200,17 @@ export class PageFlip extends EventObject {
         
         // Only show hint if this isn't the last page
         if (rightPageIndex >= this.getPageCount() - 1) {
-            console.log("Magazine: On last page, skipping hint animation");
             return; // No hint for the last page
         }
         
         // Get the book dimensions to calculate corner position
         const rect = this.getBoundsRect();
-        console.log("Magazine: Book dimensions", rect);
         
         // Initial position - this is the corner of the page
         const cornerPos: Point = {
             x: rect.pageWidth * 2 - 10, // 10px from the right edge of the right page
             y: rect.height - 10 // 10px from the bottom edge
         };
-        
-        console.log("Magazine: Initial corner position", cornerPos);
         
         // Maximum fold depth - make this much deeper (now 150px)
         const maxFoldDepth = 150;
@@ -313,11 +268,6 @@ export class PageFlip extends EventObject {
                     y: cornerPos.y - foldDepth
                 };
                 
-                // Only log periodically to avoid console spam
-                if (elapsed % 100 < 16) {
-                    console.log(`Magazine: Animation phase ${animationPhase} - depth ${Math.round(foldDepth)}px`);
-                }
-                
                 // Apply the fold
                 this.flipController.showCorner(pos);
                 
@@ -325,7 +275,6 @@ export class PageFlip extends EventObject {
                 this.animationFrameId = requestAnimationFrame(animate);
             } else {
                 // Animation complete - reset position
-                console.log("Magazine: Animation complete, hiding fold");
                 this.flipController.showCorner({ x: -100, y: -100 });
                 
                 // Clear animation frame ID
@@ -334,7 +283,6 @@ export class PageFlip extends EventObject {
         };
         
         // Start the animation
-        console.log("Magazine: Starting smooth corner fold animation");
         this.animationFrameId = requestAnimationFrame(animate);
     }
 
@@ -357,11 +305,6 @@ export class PageFlip extends EventObject {
      * @param {(NodeListOf<HTMLElement>|HTMLElement[])} items - List of pages as HTML Element
      */
     public loadFromHTML(items: NodeListOf<HTMLElement> | HTMLElement[]): void {
-        console.log("Magazine: loadFromHTML called", {
-            showFlipHint: this.setting.showFlipHint,
-            flipHintInterval: this.setting.flipHintInterval
-        });
-
         this.ui = new HTMLUI(this.block, this, this.setting, items);
 
         this.render = new HTMLRender(this, this.setting, this.ui.getDistElement());
@@ -388,10 +331,7 @@ export class PageFlip extends EventObject {
             
             // Set up flip hint timer
             if (this.setting.showFlipHint) {
-                console.log("Magazine: Initializing flip hint timer");
                 this.setupFlipHintTimer();
-            } else {
-                console.log("Magazine: Flip hint disabled in settings, not initializing timer");
             }
         }, 1);
     }
@@ -842,7 +782,6 @@ export class PageFlip extends EventObject {
                 
                 // If animation is running and mouse is hovering over corner, cancel animation
                 if (this.animationFrameId !== null) {
-                    console.log("Magazine: Mouse hover in corner area detected, canceling hint");
                     this.cancelHintAnimation();
                     
                     // Update interaction time for corner hover
@@ -899,8 +838,6 @@ export class PageFlip extends EventObject {
         // Cancel hint ONLY if the corner is being lifted by actual user touch (not just hover)
         // This requires the state to change to FOLD_CORNER AND the user is actively touching
         if (!wasInCornerState && isNowInCornerState && isOnCorners && this.isUserTouch) {
-            console.log("Magazine: Corner lifted by user touch interaction, canceling hint");
-            
             // User has interacted with the corner - update interaction time
             this.lastInteractionTime = Date.now();
             
@@ -910,7 +847,6 @@ export class PageFlip extends EventObject {
             // Set cooldown period
             if (this.setting.flipHintCooldown) {
                 this.cooldownUntil = Date.now() + this.setting.flipHintCooldown;
-                console.log(`Magazine: Entering cooldown until ${new Date(this.cooldownUntil).toISOString()}`);
             }
             
             // Restart timer with cooldown
@@ -947,8 +883,6 @@ export class PageFlip extends EventObject {
                     // Cancel hint ONLY if a page flip was actually initiated
                     if (stateBeforeFlip !== FlippingState.FLIPPING && 
                         stateAfterFlip === FlippingState.FLIPPING) {
-                        console.log("Magazine: Page flip initiated, canceling hint");
-                        
                         // Update interaction time when flipping pages
                         this.lastInteractionTime = Date.now();
                         
@@ -957,7 +891,6 @@ export class PageFlip extends EventObject {
                         
                         // Set cooldown period
                         this.cooldownUntil = Date.now() + (this.setting.flipHintCooldown || 60000);
-                        console.log(`Magazine: Entering cooldown until ${new Date(this.cooldownUntil).toISOString()}`);
                         
                         // Restart timer with cooldown
                         this.clearFlipHintTimer();
