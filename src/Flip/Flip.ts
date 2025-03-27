@@ -283,6 +283,13 @@ export class Flip {
 
         const y = this.calc.getCorner() === FlipCorner.BOTTOM ? rect.height : 0;
 
+        // Check if we're in FOLD_CORNER state (peek interaction)
+        if (this.state === FlippingState.FOLD_CORNER) {
+            // Notify app that we're changing state
+            this.app.updateState(FlippingState.READ);
+            this.state = FlippingState.READ;
+        }
+        
         if (pos.x <= 0) this.animateFlippingTo(pos, { x: -rect.pageWidth, y }, true);
         else this.animateFlippingTo(pos, { x: rect.pageWidth, y }, false);
     }
@@ -325,11 +332,55 @@ export class Flip {
                 this.do(this.render.convertToPage(globalPos));
             }
         } else {
+            // Mouse is outside corner area - check if we need to exit fold_corner state
+            const wasInCornerState = this.state === FlippingState.FOLD_CORNER;
+            const targetSpreadData = wasInCornerState ? this.getTargetSpreadData() : null;
+            
+            // Set state to READ *after* capturing the target spread data
             this.setState(FlippingState.READ);
             this.render.finishAnimation();
 
             this.stopMove();
         }
+    }
+
+    /**
+     * Get data about the target spread when in FOLD_CORNER state
+     * This is needed to properly handle the corner fold animation end
+     */
+    private getTargetSpreadData(): any {
+        // Only calculate if we have a calculation object
+        if (!this.calc) return null;
+        
+        // Get the direction from the calculation
+        const direction = this.calc.getDirection();
+        
+        // If we have app reference
+        if (this.app) {
+            try {
+                const currentSpreadIndex = this.app.getPageCollection().getCurrentSpreadIndex();
+                
+                // Calculate target spread index based on direction
+                let targetSpreadIndex = currentSpreadIndex;
+                if (direction === 0) { // FORWARD
+                    targetSpreadIndex = currentSpreadIndex + 1;
+                } else if (direction === 1) { // BACK
+                    targetSpreadIndex = currentSpreadIndex - 1;
+                }
+                
+                // We need to access this data more carefully
+                // Rather than accessing private methods, let's pass the necessary data
+                return {
+                    currentSpreadIndex,
+                    targetSpreadIndex,
+                    direction
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        return null;
     }
 
     /**

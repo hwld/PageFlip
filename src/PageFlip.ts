@@ -445,7 +445,7 @@ export class PageFlip extends EventObject {
     }
 
     /**
-     * Call a state change event trigger
+     * Called by Flip when the flipping state is changed
      *
      * @param {FlippingState} newState - New state of the object
      */
@@ -462,8 +462,24 @@ export class PageFlip extends EventObject {
             let targetSpreadIndex = currentSpreadIndex;
             let targetPageIndexes = affectedPageIndexes;
             
-            // If we're starting to flip or folding a corner, determine the target spread
-            if ((newState === FlippingState.FLIPPING || 
+            // Handle transition from FOLD_CORNER to READ
+            if (newState === FlippingState.READ && this.previousState === FlippingState.FOLD_CORNER) {
+                // Get flip direction from the flip controller for corner fold
+                const flipData = this.flipController.getCalculation();
+                if (flipData && flipData.getDirection() !== undefined) {
+                    const direction = flipData.getDirection();
+                    // Calculate target spread index based on direction
+                    if (direction === 0) { // FORWARD
+                        targetSpreadIndex = currentSpreadIndex + 1;
+                    } else if (direction === 1) { // BACK
+                        targetSpreadIndex = currentSpreadIndex - 1;
+                    }
+                    // Get page indexes for the target spread that was being previewed
+                    targetPageIndexes = this.getPageIndexesForSpread(targetSpreadIndex);
+                }
+            }
+            // Regular state transition handling for flipping/folding
+            else if ((newState === FlippingState.FLIPPING || 
                  newState === FlippingState.USER_FOLD || 
                  newState === FlippingState.FOLD_CORNER) && 
                 (this.previousState === FlippingState.READ || this.previousState === FlippingState.FOLD_CORNER)) {
@@ -485,6 +501,7 @@ export class PageFlip extends EventObject {
             // Create the enhanced event data
             const eventData = {
                 state: newState,
+                previousState: this.previousState, // Include the previous state
                 currentPageIndex,
                 currentSpreadIndex,
                 currentPageIndexes: affectedPageIndexes,
