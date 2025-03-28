@@ -470,6 +470,22 @@ export class PageFlip extends EventObject {
             let targetSpreadIndex = currentSpreadIndex;
             let targetPageIndexes = affectedPageIndexes;
             
+            // Always get the flip direction for target spread calculation, even for progress updates
+            const flipCalc = this.flipController.getCalculation();
+            if (flipCalc && typeof flipCalc.getDirection === 'function') {
+                const direction = flipCalc.getDirection();
+                
+                // Calculate target spread index based on direction
+                if (direction === 0) { // FORWARD
+                    targetSpreadIndex = currentSpreadIndex + 1;
+                } else if (direction === 1) { // BACK
+                    targetSpreadIndex = Math.max(0, currentSpreadIndex - 1);
+                }
+                
+                // Get page indexes for the target spread
+                targetPageIndexes = this.getPageIndexesForSpread(targetSpreadIndex);
+            }
+            
             // Handle transition from FOLD_CORNER to READ
             if (newState === FlippingState.READ && this.previousState === FlippingState.FOLD_CORNER) {
                 // Get flip direction from the flip controller for corner fold
@@ -516,11 +532,21 @@ export class PageFlip extends EventObject {
                 // For flipping animations, start at 0
                 flipProgressRatio = 0.0;
             } else if (newState === FlippingState.FOLD_CORNER) {
-                // For corner folding, use 0 unless reportHoverProgress is true
-                const calc = this.flipController.getCalculation();
-                if (calc && this.setting.reportHoverProgress) {
-                    flipProgressRatio = calc.getFlippingProgress() / 100;
+                // For corner folding, use the progress if reportHoverProgress is true
+                if (this.setting.reportHoverProgress) {
+                    // Get the calculation object to extract the progress
+                    const calc = this.flipController.getCalculation();
+                    if (calc) {
+                        // Get basic progress from the calculation
+                        const calcProgress = calc.getFlippingProgress() / 100;
+                        
+                        // Use the progress value (0-1) for corner folding
+                        flipProgressRatio = calcProgress;
+                    } else {
+                        flipProgressRatio = 0.0;
+                    }
                 } else {
+                    // If hover progress reporting is disabled, always use 0
                     flipProgressRatio = 0.0;
                 }
             } else if (newState === FlippingState.USER_FOLD) {

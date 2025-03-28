@@ -357,8 +357,22 @@ export class Flip {
                         false
                     );
                 } else {
-                    // Process the hover position - will trigger progress update through do()
+                    // Calculate an improved hover progress based on cursor position
+                    const pagePos = this.render.convertToPage(globalPos);
+                    
+                    // Calculate total flip distance and current position along that trajectory
+                    const fullFlipDistance = 2 * pageWidth; // Full width of book (pageWidth to -pageWidth)
+                    const currentDistanceFromCorner = pageWidth - pagePos.x; // How far from the corner edge
+                    
+                    // Calculate progress: how far along the total flip path we are
+                    // This gives us 0 when just starting at the corner and approaches 1 as we move toward full flip
+                    const hoverProgress = Math.max(0, Math.min(1, currentDistanceFromCorner / fullFlipDistance));
+                    
+                    // Process the position normally
                     this.do(this.render.convertToPage(globalPos));
+                    
+                    // Update the state with our calculated progress
+                    this.app.updateState(FlippingState.FOLD_CORNER, hoverProgress);
                 }
             } else {
                 // Mouse is outside corner area - check if we need to exit fold_corner state
