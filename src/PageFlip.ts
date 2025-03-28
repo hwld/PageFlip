@@ -2,6 +2,7 @@ import { PageRect, Point } from './BasicTypes';
 import { HTMLPageCollection } from './Collection/HTMLPageCollection';
 import { PageCollection } from './Collection/PageCollection';
 import { EventObject } from './Event/EventObject';
+import { StateChangeEventData } from './Event/StateChangeEvent';
 import { Flip, FlipCorner, FlippingState } from './Flip/Flip';
 import { Helper } from './Helper';
 import { Page } from './Page/Page';
@@ -499,7 +500,7 @@ export class PageFlip extends EventObject {
             }
             
             // Create the enhanced event data
-            const eventData = {
+            const eventData: StateChangeEventData = {
                 state: newState,
                 previousState: this.previousState, // Include the previous state
                 currentPageIndex,
