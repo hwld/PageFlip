@@ -66,6 +66,12 @@ export interface FlipSetting {
     
     /** The cooldown period in milliseconds after user interaction before hints can resume */
     flipHintCooldown: number;
+    
+    /** 
+     * If true, corner hover interactions will report actual progress in flipProgressRatio.
+     * If false, corner hover interactions will always report 0 progress.
+     */
+    reportHoverProgress: boolean;
 }
 
 export class Settings {
@@ -94,6 +100,7 @@ export class Settings {
         showFlipHint: false,
         flipHintInterval: 5000,
         flipHintCooldown: 60000,
+        reportHoverProgress: false,
     };
 
     /**

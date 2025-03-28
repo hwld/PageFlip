@@ -194,14 +194,16 @@ export class Helper {
      *
      * @param pointOne
      * @param pointTwo
+     * @param count - Optional number of points to generate (if not provided, uses distance)
      *
      * @returns {Point[]}
      */
-    public static GetCordsFromTwoPoint(pointOne: Point, pointTwo: Point): Point[] {
+    public static GetCordsFromTwoPoint(pointOne: Point, pointTwo: Point, count?: number): Point[] {
         const sizeX = Math.abs(pointOne.x - pointTwo.x);
         const sizeY = Math.abs(pointOne.y - pointTwo.y);
 
-        const lengthLine = Math.max(sizeX, sizeY);
+        // Use provided count or calculate based on distance
+        const lengthLine = count !== undefined ? count : Math.max(sizeX, sizeY);
 
         const result: Point[] = [pointOne];
 
@@ -221,10 +223,14 @@ export class Helper {
             return c1;
         }
 
-        for (let i = 1; i <= lengthLine; i += 1) {
+        // If count is provided, use it for steps
+        const steps = count !== undefined ? count - 1 : lengthLine;
+        
+        for (let i = 1; i <= steps; i += 1) {
+            const step = count !== undefined ? i / steps : i;
             result.push({
-                x: getCord(pointOne.x, pointTwo.x, sizeX, lengthLine, i),
-                y: getCord(pointOne.y, pointTwo.y, sizeY, lengthLine, i),
+                x: getCord(pointOne.x, pointTwo.x, sizeX, lengthLine, step * lengthLine),
+                y: getCord(pointOne.y, pointTwo.y, sizeY, lengthLine, step * lengthLine),
             });
         }
 

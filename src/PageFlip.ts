@@ -349,13 +349,16 @@ export class PageFlip extends EventObject {
         const currentPageIndexes = this.getPageIndexesForSpread(currentSpreadIndex);
         
         // Create the initial state event data
-        const eventData = {
+        const eventData: StateChangeEventData = {
             state: FlippingState.READ,
+            previousState: FlippingState.READ, // Initial state has same previous state
             currentPageIndex,
             currentSpreadIndex,
             currentPageIndexes,
             targetSpreadIndex: currentSpreadIndex,
-            targetPageIndexes: currentPageIndexes
+            targetPageIndexes: currentPageIndexes,
+            flipProgressRatio: 1.0,  // Initial state is fully visible (100% progress)
+            stateDidChange: true     // Mark as a state change for initial setup
         };
         
         // Trigger the enhanced changeState event with initial state
@@ -449,10 +452,14 @@ export class PageFlip extends EventObject {
      * Called by Flip when the flipping state is changed
      *
      * @param {FlippingState} newState - New state of the object
+     * @param {number} [progress] - Optional progress ratio (0.0 to 1.0) of the page flip
      */
-    public updateState(newState: FlippingState): void {
-        // Only send event if the state actually changed
-        if (this.previousState !== newState) {
+    public updateState(newState: FlippingState, progress: number = null): void {
+        // Check if we're updating state or just progress
+        const stateDidChange = this.previousState !== newState;
+        const shouldFireEvent = stateDidChange || progress !== null;
+        
+        if (shouldFireEvent) {
             const currentSpreadIndex = this.pages.getCurrentSpreadIndex();
             const currentPageIndex = this.pages.getCurrentPageIndex();
             
@@ -499,6 +506,31 @@ export class PageFlip extends EventObject {
                 targetPageIndexes = this.getPageIndexesForSpread(targetSpreadIndex);
             }
             
+            // Handle progress value
+            let flipProgressRatio = 1.0; // Default to 1.0 for instant flips
+            
+            if (progress !== null) {
+                // Use provided progress if available
+                flipProgressRatio = progress;
+            } else if (newState === FlippingState.FLIPPING) {
+                // For flipping animations, start at 0
+                flipProgressRatio = 0.0;
+            } else if (newState === FlippingState.FOLD_CORNER) {
+                // For corner folding, use 0 unless reportHoverProgress is true
+                const calc = this.flipController.getCalculation();
+                if (calc && this.setting.reportHoverProgress) {
+                    flipProgressRatio = calc.getFlippingProgress() / 100;
+                } else {
+                    flipProgressRatio = 0.0;
+                }
+            } else if (newState === FlippingState.USER_FOLD) {
+                // For user dragging, calculate progress from the flip controller
+                const calc = this.flipController.getCalculation();
+                if (calc) {
+                    flipProgressRatio = calc.getFlippingProgress() / 100;
+                }
+            }
+            
             // Create the enhanced event data
             const eventData: StateChangeEventData = {
                 state: newState,
@@ -507,7 +539,9 @@ export class PageFlip extends EventObject {
                 currentSpreadIndex,
                 currentPageIndexes: affectedPageIndexes,
                 targetSpreadIndex,
-                targetPageIndexes
+                targetPageIndexes,
+                flipProgressRatio,
+                stateDidChange // Add the flag indicating whether state actually changed
             };
             
             // Set data-flipstate attribute on parent element
@@ -520,11 +554,13 @@ export class PageFlip extends EventObject {
                 parentElement.removeAttribute('data-flipstate');
             }
             
-            // Trigger the enhanced changeState event
+            // Always trigger the event when progress changes
             this.trigger('changeState', this, eventData);
             
-            // Update the previous state
-            this.previousState = newState;
+            // Only update previous state if it actually changed
+            if (stateDidChange) {
+                this.previousState = newState;
+            }
         }
     }
     

@@ -71,11 +71,15 @@ export class Flip {
             didStart = this.start(globalPos);
         }
 
-        /**
-         * Only start the folding if we indeed have a calc
-         */
-        if (didStart) this.setState(FlippingState.USER_FOLD);
-        this.do(this.render.convertToPage(globalPos));
+        // Only start the folding if we indeed have a calc
+        if (didStart) {
+            this.setState(FlippingState.USER_FOLD, false);
+            
+            // Process the touch position
+            this.do(this.render.convertToPage(globalPos));
+            
+            // No need for additional updateState here since do() now handles it
+        }
     }
 
     /**
@@ -93,7 +97,9 @@ export class Flip {
 
         const rect = this.getBoundsRect();
 
-        this.setState(FlippingState.FLIPPING);
+        this.setState(FlippingState.FLIPPING, false);
+        // Set initial progress to 0 at the start of animation
+        this.app.updateState(FlippingState.FLIPPING, 0);
 
         // Margin from top to start flipping
         const topMargins = rect.height / 10;
@@ -189,6 +195,7 @@ export class Flip {
         if (this.calc.calc(pagePos)) {
             // Perform calculations for a specific position
             const progress = this.calc.getFlippingProgress();
+            const progressRatio = progress / 100; // Convert to 0-1 range
 
             this.currentPage.setArea(this.calc.getCurrentClipArea());
             this.currentPage.setPosition(this.calc.getBottomPagePosition());
@@ -221,6 +228,10 @@ export class Flip {
                 progress,
                 this.calc.getDirection()
             );
+            
+            // Continuously update state with progress on each position change
+            // Pass the current state with new progress
+            this.app.updateState(this.state, progressRatio);
         }
     }
 
@@ -310,7 +321,7 @@ export class Flip {
             if (this.calc === null) {
                 if (!this.start(globalPos)) return;
 
-                this.setState(FlippingState.FOLD_CORNER);
+                this.setState(FlippingState.FOLD_CORNER, false);
 
                 this.calc.calc({ x: pageWidth - 1, y: 1 });
 
@@ -322,6 +333,10 @@ export class Flip {
                         ? rect.height - fixedCornerSize
                         : fixedCornerSize;
 
+                // Initial corner fold progress
+                const progress = this.calc.getFlippingProgress() / 100;
+                this.app.updateState(FlippingState.FOLD_CORNER, progress);
+
                 this.animateFlippingTo(
                     { x: pageWidth - 1, y: yStart },
                     { x: pageWidth - fixedCornerSize, y: yDest },
@@ -329,6 +344,7 @@ export class Flip {
                     false
                 );
             } else {
+                // Process the hover position - will trigger progress update through do()
                 this.do(this.render.convertToPage(globalPos));
             }
         } else {
@@ -397,11 +413,31 @@ export class Flip {
         isTurned: boolean,
         needReset = true
     ): void {
-        const points = Helper.GetCordsFromTwoPoint(start, dest);
+        // Get a denser set of points for smoother animation
+        // Use at least 60 points for a smooth animation (matching 60fps)
+        const numPoints = Math.max(60, Helper.GetDistanceBetweenTwoPoint(start, dest) * 3);
+        const points = Helper.GetCordsFromTwoPoint(start, dest, numPoints);
 
         // Create frames
         const frames = [];
-        for (const p of points) frames.push(() => this.do(p));
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            
+            // Calculate progress for each frame (0 to 1)
+            const progress = i / (points.length - 1);
+            
+            // Wrap the frame function to include progress update
+            frames.push(() => {
+                this.do(p);
+                
+                // Update state with current progress during animation
+                // We do this here in addition to do() to ensure progress is updated
+                // consistently during animations
+                if (this.state === FlippingState.FLIPPING) {
+                    this.app.updateState(FlippingState.FLIPPING, progress);
+                }
+            });
+        }
 
         const duration = this.getAnimationDuration(points.length);
 
@@ -440,9 +476,18 @@ export class Flip {
         return this.calc;
     }
 
-    private setState(newState: FlippingState): void {
+    /**
+     * Set the flipping state and update the app if the state changes
+     * 
+     * @param newState - The new flipping state
+     * @param updateApp - Whether to call app.updateState (default: true)
+     */
+    private setState(newState: FlippingState, updateApp: boolean = true): void {
         if (this.state !== newState) {
-            this.app.updateState(newState);
+            // Only update the app state if requested (we might be doing it elsewhere with progress)
+            if (updateApp) {
+                this.app.updateState(newState);
+            }
             this.state = newState;
         }
     }

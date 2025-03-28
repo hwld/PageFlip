@@ -1,7 +1,7 @@
-import { PageFlip } from '../PageFlip';
-import { Point, PageRect, RectPoints } from '../BasicTypes';
+import { PageRect, Point, RectPoints } from '../BasicTypes';
 import { FlipDirection } from '../Flip/Flip';
 import { Page, PageOrientation } from '../Page/Page';
+import { PageFlip } from '../PageFlip';
 import { FlipSetting, SizeType } from '../Settings';
 
 type FrameAction = () => void;
@@ -118,14 +118,23 @@ export abstract class Render {
      */
     private render(timer: number): void {
         if (this.animation !== null) {
-            // Find current frame of animation
-            const frameIndex = Math.round(
-                (timer - this.animation.startedAt) / this.animation.durationFrame
+            // Calculate the elapsed time since animation started
+            const elapsed = timer - this.animation.startedAt;
+            
+            // Calculate the progress of the animation (0 to 1)
+            const progress = Math.min(elapsed / this.animation.duration, 1);
+            
+            // Get frame index based on progress
+            const frameIndex = Math.min(
+                Math.floor(progress * this.animation.frames.length),
+                this.animation.frames.length - 1
             );
-
-            if (frameIndex < this.animation.frames.length) {
-                this.animation.frames[frameIndex]();
-            } else {
+            
+            // Execute the current frame
+            this.animation.frames[frameIndex]();
+            
+            // If animation is complete, call the end callback
+            if (progress >= 1) {
                 this.animation.onAnimateEnd();
                 this.animation = null;
             }
