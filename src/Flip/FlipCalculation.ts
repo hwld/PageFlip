@@ -1,5 +1,5 @@
-import { Helper } from '../Helper';
 import { Point, Rect, RectPoints, Segment } from '../BasicTypes';
+import { Helper } from '../Helper';
 import { FlipCorner, FlipDirection } from './Flip';
 
 /**
@@ -48,6 +48,11 @@ export class FlipCalculation {
      */
     public calc(localPos: Point): boolean {
         try {
+            // Make sure localPos is valid
+            if (!localPos || typeof localPos.x !== 'number' || typeof localPos.y !== 'number') {
+                return false;
+            }
+            
             // Find: page rotation angle and active corner position
             this.position = this.calcAngleAndPosition(localPos);
             // Find the intersection points of the scrolling page and the book
@@ -55,6 +60,10 @@ export class FlipCalculation {
 
             return true;
         } catch (e) {
+            // Make sure position is defined even if calculation fails
+            if (!this.position) {
+                this.position = localPos;
+            }
             return false;
         }
     }
@@ -201,6 +210,10 @@ export class FlipCalculation {
      * Get flipping progress (0-100)
      */
     public getFlippingProgress(): number {
+        // Handle case when position is undefined
+        if (!this.position) {
+            return 0; // Return 0 progress when position is not yet defined
+        }
         return Math.abs(((this.position.x - this.pageWidth) / (2 * this.pageWidth)) * 100);
     }
 

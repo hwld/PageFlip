@@ -192,6 +192,11 @@ export class Flip {
     private do(pagePos: Point): void {
         if (this.calc === null) return; // Flipping process not started
 
+        // Ensure pagePos is valid
+        if (!pagePos || typeof pagePos.x !== 'number' || typeof pagePos.y !== 'number') {
+            return;
+        }
+
         if (this.calc.calc(pagePos)) {
             // Perform calculations for a specific position
             const progress = this.calc.getFlippingProgress();
@@ -312,51 +317,64 @@ export class Flip {
      * @param globalPos
      */
     public showCorner(globalPos: Point): void {
-        if (!this.checkState(FlippingState.READ, FlippingState.FOLD_CORNER)) return;
+        try {
+            if (!this.checkState(FlippingState.READ, FlippingState.FOLD_CORNER)) return;
 
-        const rect = this.getBoundsRect();
-        const pageWidth = rect.pageWidth;
+            const rect = this.getBoundsRect();
+            const pageWidth = rect.pageWidth;
 
-        if (this.isPointOnCorners(globalPos)) {
-            if (this.calc === null) {
-                if (!this.start(globalPos)) return;
+            if (this.isPointOnCorners(globalPos)) {
+                if (this.calc === null) {
+                    if (!this.start(globalPos)) return;
 
-                this.setState(FlippingState.FOLD_CORNER, false);
+                    this.setState(FlippingState.FOLD_CORNER, false);
 
-                this.calc.calc({ x: pageWidth - 1, y: 1 });
+                    this.calc.calc({ x: pageWidth - 1, y: 1 });
 
-                const fixedCornerSize = 50;
-                const yStart = this.calc.getCorner() === FlipCorner.BOTTOM ? rect.height - 1 : 1;
+                    const fixedCornerSize = 50;
+                    const yStart = this.calc.getCorner() === FlipCorner.BOTTOM ? rect.height - 1 : 1;
 
-                const yDest =
-                    this.calc.getCorner() === FlipCorner.BOTTOM
-                        ? rect.height - fixedCornerSize
-                        : fixedCornerSize;
+                    const yDest =
+                        this.calc.getCorner() === FlipCorner.BOTTOM
+                            ? rect.height - fixedCornerSize
+                            : fixedCornerSize;
 
-                // Initial corner fold progress
-                const progress = this.calc.getFlippingProgress() / 100;
-                this.app.updateState(FlippingState.FOLD_CORNER, progress);
+                    // Get progress safely
+                    let progress = 0;
+                    try {
+                        progress = this.calc.getFlippingProgress() / 100;
+                    } catch (e) {
+                        console.warn("Error calculating initial corner fold progress:", e);
+                    }
+                    
+                    // Initial corner fold progress
+                    this.app.updateState(FlippingState.FOLD_CORNER, progress);
 
-                this.animateFlippingTo(
-                    { x: pageWidth - 1, y: yStart },
-                    { x: pageWidth - fixedCornerSize, y: yDest },
-                    false,
-                    false
-                );
+                    this.animateFlippingTo(
+                        { x: pageWidth - 1, y: yStart },
+                        { x: pageWidth - fixedCornerSize, y: yDest },
+                        false,
+                        false
+                    );
+                } else {
+                    // Process the hover position - will trigger progress update through do()
+                    this.do(this.render.convertToPage(globalPos));
+                }
             } else {
-                // Process the hover position - will trigger progress update through do()
-                this.do(this.render.convertToPage(globalPos));
-            }
-        } else {
-            // Mouse is outside corner area - check if we need to exit fold_corner state
-            const wasInCornerState = this.state === FlippingState.FOLD_CORNER;
-            const targetSpreadData = wasInCornerState ? this.getTargetSpreadData() : null;
-            
-            // Set state to READ *after* capturing the target spread data
-            this.setState(FlippingState.READ);
-            this.render.finishAnimation();
+                // Mouse is outside corner area - check if we need to exit fold_corner state
+                const wasInCornerState = this.state === FlippingState.FOLD_CORNER;
+                const targetSpreadData = wasInCornerState ? this.getTargetSpreadData() : null;
+                
+                // Set state to READ *after* capturing the target spread data
+                this.setState(FlippingState.READ);
+                this.render.finishAnimation();
 
-            this.stopMove();
+                this.stopMove();
+            }
+        } catch (error) {
+            console.warn("Error in showCorner:", error);
+            // Attempt to recover by resetting to READ state
+            this.setState(FlippingState.READ);
         }
     }
 
