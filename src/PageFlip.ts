@@ -860,13 +860,21 @@ export class PageFlip extends EventObject {
                 // This is just mouse hover near corner - apply corner fold visually
                 this.flipController.showCorner(pos);
                 
-                // If animation is running and mouse is hovering over corner, cancel animation
+                // Always update interaction time and reset timers for corner hover,
+                // regardless of animation state
+                this.lastInteractionTime = Date.now();
+                
+                // Set cooldown period (same as for actual page flips)
+                this.cooldownUntil = Date.now() + (this.setting.flipHintCooldown || 60000);
+                
+                // Cancel any running animation
                 if (this.animationFrameId !== null) {
                     this.cancelHintAnimation();
-                    
-                    // Update interaction time for corner hover
-                    this.lastInteractionTime = Date.now();
                 }
+                
+                // Always clear and restart the timer for corner hover
+                this.clearFlipHintTimer();
+                this.setupFlipHintTimer();
             } else if (this.isUserTouch) {
                 // Touch interaction near corner
                 if (Helper.GetDistanceBetweenTwoPoint(this.mousePosition, pos) > 5) {
@@ -925,9 +933,7 @@ export class PageFlip extends EventObject {
             this.cancelHintAnimation();
             
             // Set cooldown period
-            if (this.setting.flipHintCooldown) {
-                this.cooldownUntil = Date.now() + this.setting.flipHintCooldown;
-            }
+            this.cooldownUntil = Date.now() + (this.setting.flipHintCooldown || 60000);
             
             // Restart timer with cooldown
             this.clearFlipHintTimer();
