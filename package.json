@@ -1,18 +1,11 @@
 {
 	"name": "page-flip",
-	"version": "2.0.7",
+	"version": "2.0.7-fork.1",
 	"main": "dist/js/page-flip.browser.js",
 	"browser": "dist/js/page-flip.browser.js",
-	"type": "module",
-	"author": "max@fahl.se",
 	"license": "MIT",
 	"description": "Powerful, simple and flexible JS Library for creating realistic and beautiful page turning effect",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/maxfahl/PageFlip.git"
-	},
 	"publishConfig": {},
-	"homepage": "https://github.com/maxfahl/PageFlip/",
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "^2.33.0",
 		"@typescript-eslint/parser": "^2.33.0",

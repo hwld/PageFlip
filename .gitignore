@@ -7,3 +7,5 @@ yarn.lock
 
 **/*.js
 **/*.js.map
+
+page-flip-*.tgz
